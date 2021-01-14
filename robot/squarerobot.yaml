@@ -1,0 +1,10 @@
+robot:
+  robot_specifications:
+    - footprint:
+        footprint_specifications:
+          points:
+            "[ [0.1, 0.1], [-0.11, 0.1], [-0.11, -0.11], [0.1, -0.11] ]"
+    - initial_pose:
+        x: 0
+        y: 0
+        theta: 0
