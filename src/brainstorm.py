@@ -155,16 +155,16 @@ class Bot:
 	def broadcast_component(self):
 		while True:
 			pub = rospy.Publisher('position' + str(self.wp), Message, queue_size=8)
-   		    rospy.init_node(self.robot_name + 'talker', anonymous=True)
-   		    rate = rospy.Rate(4)
-   		    while not rospy.is_shutdown():
-   		    	msg = Message(self.p, self.wp, self.next_step, self.T, self.q_u, self.hop)
-   		    	rospy.loginfo(msg)
-   		    	pub.publish(msg)
-   		    	rate.sleep()
+			rospy.init_node(self.robot_name + 'talker', anonymous=True)
+			rate = rospy.Rate(4)
+			while not rospy.is_shutdown():
+				msg = Message(self.p, self.wp, self.next_step, self.T, self.q_u, self.hop)
+				rospy.loginfo(msg)
+				pub.publish(msg)
+				rate.sleep()
 
-   	def exchange(self):
-   		return True
+	def exchange(self):
+		return True
 
 	def goal_manager(self):
 		while True:
