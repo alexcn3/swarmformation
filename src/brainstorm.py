@@ -9,6 +9,7 @@ from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Point, Twist
 from math import atan2
 import numpy as np
+import argparse
 
 
 # define
@@ -187,10 +188,20 @@ class Bot:
 							self.T = message_recieved.T
 							self.update_last_check()
 
+def coords(s):
+	try:
+		x, y = map(int, s.split(','))
+		return x, y
+	except:
+		raise TypeError('Wrong type.')
 
 if __name__ == '__main__':
 
-	script, name, Q = rospy.myargv(argv = sys.argv)
+	myargs = rospy.myargv(argv = sys.argv)
+	name = myargs[1]
+	Q = set()
+	for string in myargs[2:]:
+		Q.add(tuple(string))
 	Bot(name, Q)
 
 
