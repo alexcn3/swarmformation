@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#! /usr/bin/env python3
 
 import random
 import math
@@ -7,9 +7,13 @@ import rospy
 import actionlib
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Point, Twist
+from tf.transformations import euler_from_quaternion
 from math import atan2
 import numpy as np
+import sys
 import argparse
+import ast
+import time
 
 
 # define
@@ -32,30 +36,37 @@ class Message:
 class Bot:
 
 	def __init__(self, name, Q):
+	
+		
 		self.robot_name = name
 		self.p = self.update_position()
+		print(':]')
 		self.wp = self.claim_waypoint()
 		self.next_step = None
-		self.T = random.choose(Q)
-		self.q_u = random.choose(Q)
+		self.T = random.choice(Q)
+		self.q_u = random.choice(Q)
 		self.hop = math.inf
+		print('ehhhhh')
+		rospy.init_node('plee')
 		
 		self.pub = rospy.Publisher('/' + self.robot_name + '/cmd_vel', Twist, queue_size = 1)
 		self.Q = Q.copy()
 		self.delta_t = 2/f_comm
-		self.last_check = clock()
+		self.last_check = time.perf_counter()
 		self.msg_buff_t1 = []
 		self.msg_buff_t3 = []
+		
+		print('uuuuuuooooouuuu')
 
-
-		self.t1 = threading.Thread(target = self.main_component)
-		self.t2 = threading.Thread(target = self.broadcast_component)
-		self.t3 = threading.Thread(target = self.goal_manager)
-		self.t4 = threading.Thread(target = self.msg_buff_populator)
-		self.t1.start()
-		self.t2.start()
-		self.t3.start()
-		self.t4.start()
+		while not rospy.is_shutdown():
+			t1 = threading.Thread(target = self.main_component)
+			t2 = threading.Thread(target = self.broadcast_component)
+			t3 = threading.Thread(target = self.goal_manager)
+			t4 = threading.Thread(target = self.msg_buff_populator)
+			t1.start()
+			t2.start()
+			t3.start()
+			t4.start()
 
 	def distance_between(self, p1, p2):
 		x1, y1 = p1
@@ -70,19 +81,23 @@ class Bot:
 		return False
 
 	def update_position(self):
-		msg = rospy.wait_for_message('/' + self.robot_name + '/odom', Odometry)
+		print('o:')
+		rospy.init_node('pleaseeee')
+		msg = rospy.wait_for_message('/robot0/odom', Odometry)
+		print(':o')
 		rot_q = msg.pose.pose.orientation
 		roll, pitch, theta = euler_from_quaternion([rot_q.x, rot_q.y, rot_q.z])
-		self.p = (msg.pose.pose.position.x, msg.pose.pose.position.y, theta)
+		return (msg.pose.pose.position.x, msg.pose.pose.position.y, theta)
 
 	def claim_waypoint(self):
-		self.wp = (round(self.p[0]), round(self.p[1]))
+		return (round(self.p[0]), round(self.p[1]))
 
 	def update_last_check(self):
-		self.last_check = clock()
+		self.last_check = time.perf_counter()
 
 	def msg_buff_populator(self):
 		while True:
+			print('whee')
 			surroundings = {(self.wp[0] - l, self.wp[1]), (self.wp[0] + l, self.wp[1]), (self.wp[0], self.wp[1] - l), (self.wp[0], self.wp[1] + l)}
 			for i in surroundings:
 				msg = rospy.wait_for_message('position'+str(i), Message, 0.25)
@@ -132,6 +147,7 @@ class Bot:
 					self.update_last_check()
 				# else:
 				# 	stay() # define
+			print('woww')
 
 	def move(self, goal):
 		inc_x = goal[0] - self.p[0]
@@ -162,7 +178,9 @@ class Bot:
 				rospy.loginfo(msg)
 				pub.publish(msg)
 				rate.sleep()
-
+				
+			print('eek')
+			
 	def exchange(self):
 		return True
 
@@ -187,21 +205,17 @@ class Bot:
 						if self.exchange(): #define
 							self.T = message_recieved.T
 							self.update_last_check()
+			print('meeeep')
 
-def coords(s):
-	try:
-		x, y = map(int, s.split(','))
-		return x, y
-	except:
-		raise TypeError('Wrong type.')
 
 if __name__ == '__main__':
 
+	print('hi')
 	myargs = rospy.myargv(argv = sys.argv)
 	name = myargs[1]
-	Q = set()
+	Q = []
 	for string in myargs[2:]:
-		Q.add(tuple(string))
+		Q.append(ast.literal_eval(string))
 	Bot(name, Q)
 
 
