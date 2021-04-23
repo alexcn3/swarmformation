@@ -1,0 +1,31 @@
+<robot>
+  <robot_specifications>
+    <initial_pose>
+      <x>0</x>
+      <y>0</y>
+      <theta>0</theta>
+    </initial_pose>
+    <footprint>
+      <footprint_specifications>
+        <points>
+          <point>
+            <x>0.1</x>
+            <y>0.1</y>
+          </point>
+          <point>
+            <x>-0.11</x>
+            <y>0.1</y>
+          </point>
+          <point>
+            <x>-0.11</x>
+            <y>-0.11</y>
+          </point>
+          <point>
+            <x>0.1</x>
+            <y>-0.11</y>
+          </point>
+        </points>
+      </footprint_specifications>
+    </footprint>
+  </robot_specifications>
+</robot>

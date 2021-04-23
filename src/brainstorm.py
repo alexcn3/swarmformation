@@ -28,7 +28,7 @@ class Message:
 	def __init__(self, p, wp, next_step, T, q_u, hop):
 		self.p = p
 		self.wp = wp
-		self.next = next_step
+		self.next_step = next_step
 		self.T = T
 		self.q_u = q_u
 		self.hop = hop
@@ -47,13 +47,13 @@ class Bot:
 		self.q_u = random.choice(Q)
 		self.hop = math.inf
 		print('ehhhhh')
-		rospy.init_node('plee')
+		# rospy.init_node('plee')
 		
 		self.pub = rospy.Publisher('/' + self.robot_name + '/cmd_vel', Twist, queue_size = 1)
 		self.Q = Q.copy()
 		self.delta_t = 2/f_comm
 		self.last_check = time.perf_counter()
-		self.msg_buff_t1 = []
+		self.msg_buff_t1 = [Message((3, 2), (3, 2), (3, 3), (5, 6), (3, 3), 1)]
 		self.msg_buff_t3 = []
 		
 		print('uuuuuuooooouuuu')
@@ -64,9 +64,9 @@ class Bot:
 			t3 = threading.Thread(target = self.goal_manager)
 			t4 = threading.Thread(target = self.msg_buff_populator)
 			t1.start()
-			t2.start()
-			t3.start()
-			t4.start()
+			#t2.start()
+			#t3.start()
+			#t4.start()
 
 	def distance_between(self, p1, p2):
 		x1, y1 = p1
@@ -86,7 +86,7 @@ class Bot:
 		msg = rospy.wait_for_message('/robot0/odom', Odometry)
 		print(':o')
 		rot_q = msg.pose.pose.orientation
-		roll, pitch, theta = euler_from_quaternion([rot_q.x, rot_q.y, rot_q.z])
+		roll, pitch, theta = euler_from_quaternion([rot_q.x, rot_q.y, rot_q.z, rot_q.w])
 		return (msg.pose.pose.position.x, msg.pose.pose.position.y, theta)
 
 	def claim_waypoint(self):
@@ -112,35 +112,36 @@ class Bot:
 				if self.distance_between(self.wp, self.T) >= l + self.distance_between(i, self.T):
 					self.next_step = i
 					break
-			if self.msg_buff_t1: 
+			if self.msg_buff_t1 != []: 
+				print("we in")
 				msg_min = None
 				min_hop = math.inf
-				for msg in self.msg_buff:
+				for msg in self.msg_buff_t1:
 					if msg.hop < min_hop:
 						msg_min = msg
 						min_hop = msg.hop
 				self.hop = 1 + min_hop
 				self.q_u = msg_min.q_u
 				for i in surroundings:
-					for msg in msg_buff:
+					for msg in self.msg_buff_t1:
 						if msg.T == i:
 							continue
 					if i in Q:
 						self.q_u = i
 						self.hop = 0
 						break
-				for msg in msg_buff:
+				for msg in self.msg_buff_t1:
 					if msg.wp == self.next_step:
 						wait_flag = 1
 					if msg.next_step == self.next_step and self.lexigraphically_greater(msg.p, self.p):
 						wait_flag = 1
-				if wait_flag == 0 and clock() - self.last_check > self.delta_t:
+				if wait_flag == 0 and time.perf_counter() - self.last_check > self.delta_t:
 					goal = self.next_step
 					# if next_step[0] == wp[0]:
 					# 	goal = ('y', self.next_step[1] - self.wp[1])
 					# else:
 					# 	goal = ('x', self.next_step[0] - self.wp[0])
-					self.wp = self.next_step
+					#self.wp = self.next_step
 					self.msg_buff_t1 = []
 					self.move(goal)
 					self.update_position()
@@ -150,6 +151,7 @@ class Bot:
 			print('woww')
 
 	def move(self, goal):
+		r = rospy.Rate(10)
 		inc_x = goal[0] - self.p[0]
 		inc_y = goal[1] - self.p[1]
 		speed = Twist()

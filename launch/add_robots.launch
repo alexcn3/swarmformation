@@ -1,0 +1,16 @@
+<launch>	      
+	      
+	<arg name="nr" default="1"/>
+
+	<node name="$(eval 'robot_spawn' + str(arg('nr')))"
+	      pkg="stdr_robot"
+	      type="robot_handler"
+	      respawn="false"
+	      args="add $(find swarm_formation_py)/robot/squarerobot.xml 1 2 0"/>
+	      
+	<include file="$(find swarm_formation_py)/launch/add_robots.launch" 
+		 if="$(eval arg('nr') - 1 > 0)">
+		 <arg name="nr" value="$(eval arg('nr') - 1)"/>
+	</include>
+	
+</launch>
