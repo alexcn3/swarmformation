@@ -106,6 +106,7 @@ class Bot:
 
 	def main_component(self):
 		while True:
+			print(Q)
 			surroundings = {(self.wp[0] - l, self.wp[1]), (self.wp[0] + l, self.wp[1]), (self.wp[0], self.wp[1] - l), (self.wp[0], self.wp[1] + l)}
 			wait_flag = 0
 			for i in surroundings:
