@@ -17,7 +17,7 @@ import time
 
 
 # define
-f_comm = 1
+f_comm = 250
 beta = 0.5
 l = 1
 # l = 2*sqrt(2)*r
@@ -37,6 +37,7 @@ class Bot:
 
 	def __init__(self, name, Q):
 	
+		rospy.init_node('plee')
 		
 		self.robot_name = name
 		self.p = self.update_position()
@@ -47,18 +48,19 @@ class Bot:
 		self.q_u = random.choice(Q)
 		self.hop = math.inf
 		print('ehhhhh')
-		# rospy.init_node('plee')
 		
-		self.pub = rospy.Publisher('/' + self.robot_name + '/cmd_vel', Twist, queue_size = 1)
+		print('/' + self.robot_name + '/cmd_vel')
+		#self.pub = rospy.Publisher("/robot0/cmd_vel", Twist, queue_size = 1)
 		self.Q = Q.copy()
 		self.delta_t = 2/f_comm
 		self.last_check = time.perf_counter()
-		self.msg_buff_t1 = [Message((3, 2), (3, 2), (3, 3), (5, 6), (3, 3), 1)]
+		self.msg_buff_t1 = [Message((3, 2), (3, 2), (3, 4), (5, 6), (3, 3), 1)]
 		self.msg_buff_t3 = []
-		
+		self.i = 0
 		print('uuuuuuooooouuuu')
 
 		while not rospy.is_shutdown():
+			
 			t1 = threading.Thread(target = self.main_component)
 			t2 = threading.Thread(target = self.broadcast_component)
 			t3 = threading.Thread(target = self.goal_manager)
@@ -82,7 +84,7 @@ class Bot:
 
 	def update_position(self):
 		print('o:')
-		rospy.init_node('pleaseeee')
+		#rospy.init_node('pleaseeee')
 		msg = rospy.wait_for_message('/robot0/odom', Odometry)
 		print(':o')
 		rot_q = msg.pose.pose.orientation
@@ -105,8 +107,7 @@ class Bot:
 				self.msg_buff_t3.append(msg)
 
 	def main_component(self):
-		while True:
-			print(Q)
+		while self.i < 55:
 			surroundings = {(self.wp[0] - l, self.wp[1]), (self.wp[0] + l, self.wp[1]), (self.wp[0], self.wp[1] - l), (self.wp[0], self.wp[1] + l)}
 			wait_flag = 0
 			for i in surroundings:
@@ -122,7 +123,8 @@ class Bot:
 						msg_min = msg
 						min_hop = msg.hop
 				self.hop = 1 + min_hop
-				self.q_u = msg_min.q_u
+				if msg_min:
+					self.q_u = msg_min.q_u
 				for i in surroundings:
 					for msg in self.msg_buff_t1:
 						if msg.T == i:
@@ -131,43 +133,63 @@ class Bot:
 						self.q_u = i
 						self.hop = 0
 						break
+				
 				for msg in self.msg_buff_t1:
+					print("heh")
 					if msg.wp == self.next_step:
 						wait_flag = 1
 					if msg.next_step == self.next_step and self.lexigraphically_greater(msg.p, self.p):
 						wait_flag = 1
-				if wait_flag == 0 and time.perf_counter() - self.last_check > self.delta_t:
-					goal = self.next_step
-					# if next_step[0] == wp[0]:
-					# 	goal = ('y', self.next_step[1] - self.wp[1])
-					# else:
-					# 	goal = ('x', self.next_step[0] - self.wp[0])
-					#self.wp = self.next_step
-					self.msg_buff_t1 = []
+			
+			if wait_flag == 0 and time.perf_counter() - self.last_check > self.delta_t and self.next_step:
+				goal = self.next_step
+				print(goal)
+				while self.claim_waypoint() != goal:
 					self.move(goal)
-					self.update_position()
-					self.update_last_check()
-				# else:
-				# 	stay() # define
-			print('woww')
+				self.p = self.update_position()
+				self.update_last_check()
+			self.msg_buff_t1 = []
+			print(self.i)
+			self.i += 1
 
 	def move(self, goal):
+		print("do you go here?")
+		print(self.p)
+		print("goalll")
+		print(goal)
 		r = rospy.Rate(10)
+		self.p = self.update_position()
 		inc_x = goal[0] - self.p[0]
 		inc_y = goal[1] - self.p[1]
 		speed = Twist()
-		angle_to_goal = atan2(inc_x, inc_y)
+		angle_to_goal = atan2(inc_y, inc_x)
 		distance_to_goal = np.sqrt(inc_x*inc_x + inc_y*inc_y)
+		pub = rospy.Publisher("/robot0/cmd_vel", Twist, queue_size = 1)
+		
 		if distance_to_goal >= 0.105:
+			print("here??")
+			
+			print(abs(angle_to_goal))
 			if abs(angle_to_goal - self.p[2]) > 0.1:
 				speed.linear.x = 0.0
 				speed.angular.z = 4*(angle_to_goal - self.p[2])
 			else:
+				print("what about this one")
 				speed.linear.x = 1.1 * distance_to_goal
 				speed.angular.z = 0.0
-
-			self.pub.publish(speed)
-		r.sleep()
+			
+			pub.publish(speed)
+			r.sleep()
+		#	self.p = self.update_position()
+		#	inc_x = goal[0] - self.p[0]
+		#	inc_y = goal[1] - self.p[1]
+		#	angle_to_goal = atan2(inc_y, inc_x)
+		#	distance_to_goal = np.sqrt(inc_x*inc_x + inc_y*inc_y)
+		#speed.linear.x = 0.0
+		#speed.angular.z = 0.0
+		#pub.publish(speed)
+		
+		
 
 
 
@@ -219,6 +241,7 @@ if __name__ == '__main__':
 	Q = []
 	for string in myargs[2:]:
 		Q.append(ast.literal_eval(string))
+	
 	Bot(name, Q)
 
 
